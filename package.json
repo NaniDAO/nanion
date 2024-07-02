@@ -1,0 +1,44 @@
+{
+  "name": "nanion",
+  "module": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "start:worker": "bun run src/worker.ts",
+    "dev": "bun --watch run src/index.ts",
+    "fmt": "bunx @biomejs/biome format --write src/**.ts",
+    "lint": "bunx @biomejs/biome lint src/**.ts",
+    "test": "bun test",
+    "db:gen": "drizzle-kit generate",
+    "db:push": "drizzle-kit push"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.8.2",
+    "@types/bun": "latest",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/luxon": "^3.4.2",
+    "@types/node": "^20.14.8",
+    "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.11.6",
+    "@types/uuid": "^10.0.0",
+    "drizzle-kit": "^0.22.8"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "16.4.5",
+    "drizzle-orm": "^0.31.2",
+    "express": "^4.19.2",
+    "luxon": "^3.4.4",
+    "node-cron": "^3.0.3",
+    "permissionless": "0.1.31",
+    "pg": "^8.12.0",
+    "typescript": "^5.5.2",
+    "uuid": "^10.0.0",
+    "viem": "2.16.2",
+    "zod": "3.23.8"
+  }
+}

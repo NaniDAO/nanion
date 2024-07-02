@@ -1,0 +1,32 @@
+import {
+  pgTable,
+  varchar,
+  bigint,
+  numeric,
+  text,
+  timestamp,
+  integer,
+} from "drizzle-orm/pg-core";
+
+export const userops = pgTable("userops", {
+  userophash: varchar("userophash", { length: 66 }).primaryKey(),
+  sender: varchar("sender", { length: 42 }).notNull(),
+  nonce: numeric("nonce").notNull(),
+  factory: varchar("factory", { length: 42 }),
+  factoryData: text("factory_data"),
+  callData: text("call_data").notNull(),
+  callGasLimit: numeric("call_gas_limit").notNull(),
+  verificationGasLimit: numeric("verification_gas_limit").notNull(),
+  preVerificationGas: numeric("pre_verification_gas").notNull(),
+  maxFeePerGas: numeric("max_fee_per_gas").notNull(),
+  maxPriorityFeePerGas: numeric("max_priority_fee_per_gas").notNull(),
+  paymaster: varchar("paymaster", { length: 42 }),
+  paymasterVerificationGasLimit: numeric("paymaster_verification_gas_limit"),
+  paymasterPostOpGasLimit: numeric("paymaster_post_op_gas_limit"),
+  paymasterData: text("paymaster_data"),
+  signature: text("signature").notNull(),
+  entryPoint: varchar("entry_point", { length: 42 }).notNull(),
+  chainId: integer("chain_id").notNull(),
+  validAfter: timestamp("valid_after").notNull(),
+  validUntil: timestamp("valid_until").notNull(),
+});

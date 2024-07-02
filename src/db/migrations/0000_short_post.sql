@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS "userops" (
+	"userophash" varchar(66) PRIMARY KEY NOT NULL,
+	"sender" varchar(42) NOT NULL,
+	"nonce" bigint NOT NULL,
+	"factory" varchar(42),
+	"factory_data" text,
+	"call_data" text NOT NULL,
+	"call_gas_limit" bigint NOT NULL,
+	"verification_gas_limit" bigint NOT NULL,
+	"pre_verification_gas" bigint NOT NULL,
+	"max_fee_per_gas" bigint NOT NULL,
+	"max_priority_fee_per_gas" bigint NOT NULL,
+	"paymaster" varchar(42),
+	"paymaster_verification_gas_limit" bigint,
+	"paymaster_post_op_gas_limit" bigint,
+	"paymaster_data" text,
+	"signature" text NOT NULL,
+	"entry_point" varchar(42) NOT NULL,
+	"chain_id" integer NOT NULL,
+	"time_range_start" timestamp with time zone NOT NULL,
+	"time_range_end" timestamp with time zone NOT NULL
+);

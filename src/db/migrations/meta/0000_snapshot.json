@@ -1,0 +1,145 @@
+{
+  "id": "bbf428f3-9fad-4537-b15a-8d9c2b3cde7e",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.userops": {
+      "name": "userops",
+      "schema": "",
+      "columns": {
+        "userophash": {
+          "name": "userophash",
+          "type": "varchar(66)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "sender": {
+          "name": "sender",
+          "type": "varchar(42)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nonce": {
+          "name": "nonce",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "factory": {
+          "name": "factory",
+          "type": "varchar(42)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "factory_data": {
+          "name": "factory_data",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "call_data": {
+          "name": "call_data",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "call_gas_limit": {
+          "name": "call_gas_limit",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verification_gas_limit": {
+          "name": "verification_gas_limit",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pre_verification_gas": {
+          "name": "pre_verification_gas",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "max_fee_per_gas": {
+          "name": "max_fee_per_gas",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "max_priority_fee_per_gas": {
+          "name": "max_priority_fee_per_gas",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "paymaster": {
+          "name": "paymaster",
+          "type": "varchar(42)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "paymaster_verification_gas_limit": {
+          "name": "paymaster_verification_gas_limit",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "paymaster_post_op_gas_limit": {
+          "name": "paymaster_post_op_gas_limit",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "paymaster_data": {
+          "name": "paymaster_data",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "signature": {
+          "name": "signature",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entry_point": {
+          "name": "entry_point",
+          "type": "varchar(42)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "chain_id": {
+          "name": "chain_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time_range_start": {
+          "name": "time_range_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time_range_end": {
+          "name": "time_range_end",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
