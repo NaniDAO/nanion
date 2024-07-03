@@ -1,7 +1,6 @@
 import {
   pgTable,
   varchar,
-  bigint,
   numeric,
   text,
   timestamp,
@@ -11,6 +10,7 @@ import {
 export const userops = pgTable("userops", {
   userophash: varchar("userophash", { length: 66 }).primaryKey(),
   sender: varchar("sender", { length: 42 }).notNull(),
+  key: numeric("key").notNull(),
   nonce: numeric("nonce").notNull(),
   factory: varchar("factory", { length: 42 }),
   factoryData: text("factory_data"),

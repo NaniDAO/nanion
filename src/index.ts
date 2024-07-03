@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { ping, userop } from "./handlers";
+import { ping, userop, getSenderNonce, getScheduledOps } from "./handlers";
 import { config } from "dotenv";
 
 config();
@@ -13,6 +13,8 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/ping", ping);
+app.get("/scheduled", getScheduledOps);
+app.get("/nonce", getSenderNonce);
 app.post("/userop", userop);
 
 app.listen(port, () => {

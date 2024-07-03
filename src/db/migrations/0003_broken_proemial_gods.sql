@@ -1,0 +1,1 @@
+ALTER TABLE "userops" ADD COLUMN "key" numeric NOT NULL;

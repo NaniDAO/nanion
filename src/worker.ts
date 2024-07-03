@@ -4,27 +4,72 @@ import { fetchSavedOpsFromDb, deleteSavedOpFromDb } from "./db";
 import { arbitrum } from "viem/chains";
 import { DateTime } from "luxon";
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 5000; // 5 seconds
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const executeOpWithRetry = async (op, chainId) => {
+  const { useropHash, key, ...rest } = op;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      await executeUserOp({ ...rest }, chainId);
+      await deleteSavedOpFromDb(useropHash);
+      console.log(`Operation ${useropHash} executed successfully`);
+      return true;
+    } catch (error) {
+      console.error(
+        `Attempt ${attempt} failed for operation ${useropHash}:`,
+        error,
+      );
+      if (attempt < MAX_RETRIES) {
+        await sleep(RETRY_DELAY);
+      } else {
+        console.error(
+          `Operation ${useropHash} failed after ${MAX_RETRIES} attempts. Ignoring for now.`,
+        );
+        return false;
+      }
+    }
+  }
+};
+
+let isJobRunning = false;
+
 const runWorker = () => {
-  cron.schedule("* * * * *", async () => {
+  const job = cron.schedule("* * * * *", async () => {
+    if (isJobRunning) {
+      console.log("Previous job still running, skipping this iteration");
+      return;
+    }
+
+    isJobRunning = true;
     try {
       const savedOps = await fetchSavedOpsFromDb(arbitrum.id, [
         DateTime.now(),
         DateTime.now().plus({ minutes: 30 }),
       ]);
-      console.log("savedOps", savedOps);
-      for (const op of savedOps) {
-        const { useropHash, ...rest } = op;
-        await executeUserOp(
-          {
-            ...rest,
-          },
-          arbitrum.id,
-        );
-        await deleteSavedOpFromDb(op.useropHash);
-      }
+      console.log(`Found ${savedOps.length} operations to process`);
+
+      const results = await Promise.all(
+        savedOps.map((op) => executeOpWithRetry(op, arbitrum.id)),
+      );
+      const successCount = results.filter(Boolean).length;
+      console.log(
+        `Successfully executed ${successCount} out of ${savedOps.length} operations`,
+      );
     } catch (error) {
       console.error("Error in worker:", error);
+    } finally {
+      isJobRunning = false;
     }
+  });
+
+  // Graceful shutdown
+  process.on("SIGINT", () => {
+    console.log("Gracefully shutting down worker");
+    job.stop();
+    process.exit(0);
   });
 };
 

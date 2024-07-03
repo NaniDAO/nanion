@@ -133,3 +133,27 @@ export const validateUserOpRequest = (data: unknown): ValidatedRequestBody => {
     throw error;
   }
 };
+
+const GetScheduledOpsRequest = z.object({
+  sender: AddressSchema,
+  chainId: z.nativeEnum(ChainId).optional(),
+});
+
+export const validateGetScheduledOps = (
+  data: unknown,
+): { sender: Address; chainId?: number } => {
+  console.log("Validating getScheduledOps request", data);
+  return GetScheduledOpsRequest.parse(data);
+};
+
+const GetNonceRequest = z.object({
+  sender: AddressSchema,
+  key: BigIntSchema,
+  chainId: z.nativeEnum(ChainId).optional(),
+});
+
+export const validateGetNonce = (
+  data: unknown,
+): { sender: Address; key: bigint; chainId?: number } => {
+  return GetNonceRequest.parse(data);
+};

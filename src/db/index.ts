@@ -10,6 +10,9 @@ import type { EntryPoint } from "permissionless/types";
 import { userops } from "./schema";
 import fs from "fs";
 import path from "path";
+import { getKeyFromNonce } from "eip-7582-utils";
+import type { Address } from "viem";
+import { arbitrum } from "viem/chains";
 
 dotenv.config();
 
@@ -31,50 +34,48 @@ export async function saveUserOpToDb(
   chainId: ChainId,
   timeRange: [DateTime, DateTime],
 ): Promise<{ message: string; hash: string }> {
-  if (await simulateUserOp(userop, chainId)) {
-    try {
-      const userOpHash = getUserOperationHash({
-        userOperation: userop,
-        entryPoint: entryPoint as EntryPoint,
-        chainId,
-      });
+  // if (await simulateUserOp(userop, chainId)) {
+  try {
+    const userOpHash = getUserOperationHash({
+      userOperation: userop,
+      entryPoint: entryPoint as EntryPoint,
+      chainId,
+    });
 
-      await db.insert(userops).values({
-        userophash: userOpHash,
-        sender: userop.sender,
-        nonce: BigInt(userop.nonce),
-        factory: userop.factory,
-        factoryData: userop.factoryData,
-        callData: userop.callData,
-        callGasLimit: BigInt(userop.callGasLimit),
-        verificationGasLimit: BigInt(userop.verificationGasLimit),
-        preVerificationGas: BigInt(userop.preVerificationGas),
-        maxFeePerGas: BigInt(userop.maxFeePerGas),
-        maxPriorityFeePerGas: BigInt(userop.maxPriorityFeePerGas),
-        paymaster: userop.paymaster,
-        paymasterVerificationGasLimit: userop.paymasterVerificationGasLimit
-          ? BigInt(userop.paymasterVerificationGasLimit)
-          : null,
-        paymasterPostOpGasLimit: userop.paymasterPostOpGasLimit
-          ? BigInt(userop.paymasterPostOpGasLimit)
-          : null,
-        paymasterData: userop.paymasterData,
-        signature: userop.signature,
-        entryPoint,
-        chainId,
-        validAfter: timeRange[0].toJSDate(),
-        validUntil: timeRange[1].toJSDate(),
-      });
+    await db.insert(userops).values({
+      userophash: userOpHash,
+      sender: userop.sender.toLowerCase(),
+      key: getKeyFromNonce(userop.nonce),
+      nonce: BigInt(userop.nonce),
+      factory: userop.factory,
+      factoryData: userop.factoryData,
+      callData: userop.callData,
+      callGasLimit: BigInt(userop.callGasLimit),
+      verificationGasLimit: BigInt(userop.verificationGasLimit),
+      preVerificationGas: BigInt(userop.preVerificationGas),
+      maxFeePerGas: BigInt(userop.maxFeePerGas),
+      maxPriorityFeePerGas: BigInt(userop.maxPriorityFeePerGas),
+      paymaster: userop.paymaster,
+      paymasterVerificationGasLimit: userop.paymasterVerificationGasLimit
+        ? BigInt(userop.paymasterVerificationGasLimit)
+        : null,
+      paymasterPostOpGasLimit: userop.paymasterPostOpGasLimit
+        ? BigInt(userop.paymasterPostOpGasLimit)
+        : null,
+      paymasterData: userop.paymasterData,
+      signature: userop.signature,
+      entryPoint,
+      chainId,
+      validAfter: timeRange[0].toJSDate(),
+      validUntil: timeRange[1].toJSDate(),
+    });
 
-      return { message: "Saved", hash: userOpHash };
-    } catch (e) {
-      throw new Error(
-        `Failed to save UserOp to database: ${e instanceof Error ? e.message : "Unknown error"}`,
-      );
-    }
+    return { message: "Saved", hash: userOpHash };
+  } catch (e) {
+    throw new Error(
+      `Failed to save UserOp to database: ${e instanceof Error ? e.message : "Unknown error"}`,
+    );
   }
-
-  throw new Error("UserOp simulation failed");
 }
 
 export async function deleteSavedOpFromDb(
@@ -100,7 +101,7 @@ export async function deleteSavedOpFromDb(
 export async function fetchSavedOpsFromDb(
   chainId: ChainId,
   timeRange: [DateTime, DateTime],
-): Promise<(UserOperation & { useropHash: string })[]> {
+): Promise<(UserOperation & { useropHash: string; key: bigint })[]> {
   try {
     const result = await db
       .select()
@@ -108,16 +109,14 @@ export async function fetchSavedOpsFromDb(
       .where(
         and(
           eq(userops.chainId, chainId),
-          or(
-            gte(userops.validAfter, timeRange[0].toJSDate()),
-            lte(userops.validUntil, timeRange[1].toJSDate()),
-          ),
+          lte(userops.validAfter, timeRange[0].toJSDate()),
         ),
       )
       .orderBy(userops.validAfter);
 
     return result.map((row) => ({
       useropHash: row.userophash,
+      key: BigInt(row.key),
       sender: row.sender,
       nonce: BigInt(row.nonce),
       factory: row.factory || undefined,
@@ -144,3 +143,25 @@ export async function fetchSavedOpsFromDb(
     );
   }
 }
+
+export const getOpsBySender = async (
+  sender: Address,
+  chainId: number = arbitrum.id,
+) => {
+  if (chainId) {
+    return await db
+      .select()
+      .from(userops)
+      .where(
+        and(
+          eq(userops.sender, sender.toLowerCase()),
+          eq(userops.chainId, chainId),
+        ),
+      );
+  }
+
+  return await db
+    .select()
+    .from(userops)
+    .where(eq(userops.sender, sender.toLowerCase()));
+};
