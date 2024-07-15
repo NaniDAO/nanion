@@ -4,6 +4,7 @@ import { fetchSavedOpsFromDb, deleteSavedOpFromDb } from "./db";
 import { arbitrum } from "viem/chains";
 import { DateTime } from "luxon";
 import { extractTimeRange } from "./utils";
+import { TimeRangeError } from "./errors";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 5000; // 5 seconds
@@ -15,18 +16,18 @@ const executeOpWithRetry = async (op, chainId) => {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       // if op validUntil has passed then delete op
-      const timeRange = extractTimeRange(op.signature);
-      if (timeRange) {
-        const [validAfter, validUntil] = timeRange;
-        const now = DateTime.now();
-        if (now > validUntil) {
-          await deleteSavedOpFromDb(useropHash);
-          console.log(`Operation ${useropHash} expired, deleted from DB`);
-          return false;
-        }
-        if (now < validAfter) {
-          console.log(`Operation ${useropHash} not yet valid, skipping`);
-          return false;
+      try {
+        extractTimeRange(op.signature);
+      } catch (e) {
+        if (e instanceof TimeRangeError) {
+          if (e.message.includes("expired")) {
+            await deleteSavedOpFromDb(useropHash);
+            console.log(`Operation ${useropHash} expired, deleted from DB`);
+            return false;
+          } else {
+            console.log(`Skipping`);
+            return false;
+          }
         }
       }
 
