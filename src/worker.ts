@@ -3,6 +3,7 @@ import { executeUserOp } from "./userop-utils";
 import { fetchSavedOpsFromDb, deleteSavedOpFromDb } from "./db";
 import { arbitrum } from "viem/chains";
 import { DateTime } from "luxon";
+import { extractTimeRange } from "./utils";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 5000; // 5 seconds
@@ -13,6 +14,22 @@ const executeOpWithRetry = async (op, chainId) => {
   const { useropHash, key, ...rest } = op;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
+      // if op validUntil has passed then delete op
+      const timeRange = extractTimeRange(op.signature);
+      if (timeRange) {
+        const [validAfter, validUntil] = timeRange;
+        const now = DateTime.now();
+        if (now > validUntil) {
+          await deleteSavedOpFromDb(useropHash);
+          console.log(`Operation ${useropHash} expired, deleted from DB`);
+          return false;
+        }
+        if (now < validAfter) {
+          console.log(`Operation ${useropHash} not yet valid, skipping`);
+          return false;
+        }
+      }
+
       await executeUserOp({ ...rest }, chainId);
       await deleteSavedOpFromDb(useropHash);
       console.log(`Operation ${useropHash} executed successfully`);
@@ -22,6 +39,7 @@ const executeOpWithRetry = async (op, chainId) => {
         `Attempt ${attempt} failed for operation ${useropHash}:`,
         error,
       );
+
       if (attempt < MAX_RETRIES) {
         await sleep(RETRY_DELAY);
       } else {
