@@ -1,5 +1,6 @@
 import { bundlerClient } from "./bundler-client";
 import { DUMMY_SIGNATURE } from "./constants";
+import logger from "./logger";
 import { type UserOperation, ChainId, Hex32 } from "./types";
 
 export async function executeUserOp(
@@ -24,15 +25,15 @@ export const simulateUserOp = async (
   userOp: UserOperation,
   _chainId: ChainId,
 ) => {
-  console.log("Simulating UserOp:", userOp);
+  logger.info({ userOp }, "Simulating UserOp:");
   const estimate = bundlerClient.estimateUserOperationGas({
     userOperation: {
       ...userOp,
       signature: DUMMY_SIGNATURE, // so it does not fail due to not being in time range
     },
   });
-  console.log("DUMMY_SIGNATURE", DUMMY_SIGNATURE);
-  console.log("Estimated gas:", estimate);
+  logger.info({ DUMMY_SIGNATURE }, "DUMMY_SIGNATURE");
+  logger.info({ estimate }, "Estimated gas:");
 
   return { message: "Simulated UserOp" };
 };

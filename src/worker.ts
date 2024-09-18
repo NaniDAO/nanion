@@ -5,6 +5,7 @@ import { arbitrum } from "viem/chains";
 import { DateTime } from "luxon";
 import { extractTimeRange } from "./utils";
 import { TimeRangeError } from "./errors";
+import logger from "./logger";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 5000; // 5 seconds
@@ -22,10 +23,10 @@ const executeOpWithRetry = async (op, chainId) => {
         if (e instanceof TimeRangeError) {
           if (e.message.includes("expired")) {
             await deleteSavedOpFromDb(useropHash);
-            console.log(`Operation ${useropHash} expired, deleted from DB`);
+            logger.info(`Operation ${useropHash} expired, deleted from DB`);
             return false;
           } else {
-            console.log(`Skipping`);
+            logger.info(`Skipping`);
             return false;
           }
         }
@@ -33,7 +34,7 @@ const executeOpWithRetry = async (op, chainId) => {
 
       await executeUserOp({ ...rest }, chainId);
       await deleteSavedOpFromDb(useropHash);
-      console.log(`Operation ${useropHash} executed successfully`);
+      logger.info(`Operation ${useropHash} executed successfully`);
       return true;
     } catch (error) {
       console.error(
@@ -58,7 +59,7 @@ let isJobRunning = false;
 const runWorker = () => {
   const job = cron.schedule("* * * * *", async () => {
     if (isJobRunning) {
-      console.log("Previous job still running, skipping this iteration");
+      logger.info("Previous job still running, skipping this iteration");
       return;
     }
 
@@ -68,13 +69,13 @@ const runWorker = () => {
         DateTime.now(),
         DateTime.now().plus({ minutes: 30 }),
       ]);
-      console.log(`Found ${savedOps.length} operations to process`);
+      logger.info(`Found ${savedOps.length} operations to process`);
 
       const results = await Promise.all(
         savedOps.map((op) => executeOpWithRetry(op, arbitrum.id)),
       );
       const successCount = results.filter(Boolean).length;
-      console.log(
+      logger.info(
         `Successfully executed ${successCount} out of ${savedOps.length} operations`,
       );
     } catch (error) {
@@ -86,7 +87,7 @@ const runWorker = () => {
 
   // Graceful shutdown
   process.on("SIGINT", () => {
-    console.log("Gracefully shutting down worker");
+    logger.info("Gracefully shutting down worker");
     job.stop();
     process.exit(0);
   });

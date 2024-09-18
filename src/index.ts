@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { ping, userop, getSenderNonce, getScheduledOps } from "./handlers";
 import { config } from "dotenv";
+import logger from "./logger";
 
 config();
 
@@ -18,5 +19,5 @@ app.get("/nonce", getSenderNonce);
 app.post("/userop", userop);
 
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+  logger.info(`Server running at http://localhost:${port}`);
 });

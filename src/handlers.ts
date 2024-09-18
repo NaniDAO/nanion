@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { extractTimeRange, isWithinTimeRange } from "./utils";
-import { fetchSavedOpsFromDb, getOpsBySender, saveUserOpToDb } from "./db";
+import { getOpsBySender, saveUserOpToDb } from "./db";
 import { executeUserOp } from "./userop-utils";
 import {
   validateUserOpRequest,
@@ -12,6 +12,7 @@ import { TimeRangeError } from "./errors";
 import { ENTRYPOINT_ADDRESS_V07, getAccountNonce } from "permissionless";
 import { publicClient } from "./public-client";
 import { getNonce, getSequence } from "eip-7582-utils";
+import logger from "./logger";
 
 export const ping = (_req: Request, res: Response) => {
   res.send("pong");
@@ -22,28 +23,29 @@ export const userop = async (req: Request, res: Response) => {
     const validatedData = validateUserOpRequest(req.body);
     const { userop, entryPoint, chainId } = validatedData;
 
-    console.log("Validated request", userop, entryPoint, chainId);
+    logger.info({ userop, entryPoint, chainId }, "Validated request");
 
     const timeRange = extractTimeRange(userop.signature);
 
-    console.log("Time Range", timeRange);
+    logger.info({ timeRange }, "Time Range");
 
     if (timeRange === undefined || isWithinTimeRange(timeRange)) {
       const result = await executeUserOp(userop, chainId);
       res.json(result);
     } else {
-      console.log("Saving userop to db");
+      logger.info("Saving userop to db");
       const result = await saveUserOpToDb(
         userop,
         entryPoint,
         chainId,
         timeRange,
       );
-      console.log("Userop saved to db", result);
+      logger.info({ result }, "Userop saved to db");
       res.json(result);
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
+      logger.error(error, "Zod error");
       res.status(400).json({
         error: "Validation Error",
         details: error.errors.map((err) => ({
@@ -53,17 +55,19 @@ export const userop = async (req: Request, res: Response) => {
         })),
       });
     } else if (error instanceof TimeRangeError) {
+      // ... TimeRangeError handling remains the same
+      logger.error(error, "TimeRangeError");
       res.status(400).json({
         error: "TimeRangeError",
         message: error.message,
       });
     } else if (error instanceof Error) {
-      console.error("Unexpected error:", error);
+      logger.error(error, "Unexpected error");
       res
         .status(500)
         .json({ error: "InternalServerError", message: error.message });
     } else {
-      console.error("Unknown error:", error);
+      logger.error({ error }, "Unknown error");
       res.status(500).json({ error: "InternalServerError" });
     }
   }
@@ -73,12 +77,12 @@ export const getScheduledOps = async (req: Request, res: Response) => {
   try {
     const { sender, chainId } = validateGetScheduledOps(req.query);
     const ops = await getOpsBySender(sender, chainId);
-    console.log("GetScheduledOps", sender, chainId, ops);
+    logger.info({ sender, chainId, ops }, "GetScheduledOps");
     res.json({
       ops,
     });
   } catch (e) {
-    console.error(e);
+    logger.error(e, "Error in getScheduledOps");
     res.status(500).json({
       error: "InternalServerError",
       message: e instanceof Error ? e.message : undefined,
@@ -88,25 +92,24 @@ export const getScheduledOps = async (req: Request, res: Response) => {
 
 export const getSenderNonce = async (req: Request, res: Response) => {
   try {
-    console.log("GetNonce", req.query);
     const { sender, key, chainId } = validateGetNonce(req.query);
-    console.log("GetNonce", sender, key, chainId);
+    logger.info({ sender, key, chainId }, "GetNonce validated");
     const ops = await getOpsBySender(sender, chainId);
-    console.log("ops", ops);
+    logger.info({ ops }, "Retrieved ops");
     const entryPointNonce = await getAccountNonce(publicClient, {
       sender,
       key,
       entryPoint: ENTRYPOINT_ADDRESS_V07,
     });
-    console.log("entryPointNonce", entryPointNonce);
+    logger.info({ entryPointNonce }, "Entry point nonce");
     const nonce =
       ops.length > 0
         ? getNonce(key, BigInt(ops.length) + getSequence(entryPointNonce))
         : entryPointNonce;
-    console.log("nonce", nonce);
+    logger.info({ nonce }, "Calculated nonce");
     res.json({ nonce: nonce.toString() });
   } catch (e) {
-    console.error(e);
+    logger.error(e, "Error in getSenderNonce");
     res.status(500).json({
       error: "InternalServerError",
       message: e instanceof Error ? e.message : undefined,

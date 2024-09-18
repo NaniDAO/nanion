@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { TimeRangeError } from "./errors";
+import logger from "./logger";
 
 export function extractTimeRange(
   signature: string,
@@ -37,7 +38,7 @@ export function isWithinTimeRange(
   timeRange: [DateTime, DateTime] | undefined,
 ): boolean {
   if (!timeRange) return false;
-  console.log("timeRange", timeRange);
+  logger.info({ timeRange }, "timeRange");
   const now = DateTime.now();
   return now >= timeRange[0] && now <= timeRange[1];
 }

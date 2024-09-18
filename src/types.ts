@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Address, Hex } from "viem";
 import { ENTRYPOINT_ADDRESS_V07 } from "permissionless";
+import logger from "./logger";
 
 export enum ChainId {
   Arbitrum = 42161,
@@ -118,14 +119,14 @@ export type ValidatedRequestBody = z.infer<typeof RequestBodySchema>;
 export type Hex32 = z.infer<typeof Hex32>;
 
 export const validateUserOpRequest = (data: unknown): ValidatedRequestBody => {
-  console.log("Validating userOp request", data);
+  logger.info({ data }, "Validating userOp request");
   const parsedData = {
     userop:
       typeof data?.userop === "string" ? JSON.parse(data.userop) : data?.userop,
     entryPoint: data?.entryPoint,
     chainId: data?.chainId,
   };
-  console.log("Parsed data:", parsedData);
+  logger.info({ parsedData }, "Parsed data:");
   try {
     return RequestBodySchema.parse(parsedData);
   } catch (error) {
@@ -142,7 +143,7 @@ const GetScheduledOpsRequest = z.object({
 export const validateGetScheduledOps = (
   data: unknown,
 ): { sender: Address; chainId?: number } => {
-  console.log("Validating getScheduledOps request", data);
+  logger.info({ data }, "Validating getScheduledOps request");
   return GetScheduledOpsRequest.parse(data);
 };
 

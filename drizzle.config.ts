@@ -22,8 +22,6 @@ dbUrl.searchParams.append("sslmode", "no-verify");
 // dbUrl.searchParams.append("sslrootcert", encodeURIComponent(caString));
 
 // Use a configuration object for SSL settings if your library supports it
-//
-console.log("ca string", caString);
 const sslConfig = {
   rejectUnauthorized: false,
   ca: caString,
