@@ -146,7 +146,7 @@ export async function fetchSavedOpsFromDb(
 
 export const getOpsBySender = async (
   sender: Address,
-  chainId: number = arbitrum.id,
+  chainId: undefined | number,
 ) => {
   if (chainId) {
     return await db

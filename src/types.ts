@@ -112,7 +112,17 @@ const RequestBodySchema = z.object({
       message: `Invalid entry point. Only V7 (${EntryPoint.V7}) is supported.`,
     })
     .transform((val) => val as Address),
-  chainId: z.nativeEnum(ChainId),
+  chainId: z.union([
+    z.nativeEnum(ChainId),
+    z
+      .string()
+      .transform((val) => parseInt(val))
+      .refine((val) => Object.values(ChainId).includes(val), {
+        message: `Invalid chainId. Must be one of: ${Object.values(
+          ChainId,
+        ).join(", ")}`,
+      }),
+  ]),
 });
 
 export type UserOperation = z.infer<typeof UserOperationSchema>;
@@ -139,7 +149,19 @@ export const validateUserOpRequest = (data: unknown): ValidatedRequestBody => {
 
 const GetScheduledOpsRequest = z.object({
   sender: AddressSchema,
-  chainId: z.nativeEnum(ChainId).optional(),
+  chainId: z
+    .union([
+      z.nativeEnum(ChainId),
+      z
+        .string()
+        .transform((val) => parseInt(val))
+        .refine((val) => Object.values(ChainId).includes(val), {
+          message: `Invalid chainId. Must be one of: ${Object.values(
+            ChainId,
+          ).join(", ")}`,
+        }),
+    ])
+    .optional(),
 });
 
 export const validateGetScheduledOps = (
@@ -152,7 +174,19 @@ export const validateGetScheduledOps = (
 const GetNonceRequest = z.object({
   sender: AddressSchema,
   key: BigIntSchema,
-  chainId: z.nativeEnum(ChainId).optional(),
+  chainId: z
+    .union([
+      z.nativeEnum(ChainId),
+      z
+        .string()
+        .transform((val) => parseInt(val))
+        .refine((val) => Object.values(ChainId).includes(val), {
+          message: `Invalid chainId. Must be one of: ${Object.values(
+            ChainId,
+          ).join(", ")}`,
+        }),
+    ])
+    .optional(),
 });
 
 export const validateGetNonce = (
