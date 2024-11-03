@@ -1,11 +1,11 @@
 import cron from "node-cron";
 import { executeUserOp } from "./userop-utils";
 import { fetchSavedOpsFromDb, deleteSavedOpFromDb } from "./db";
-import { arbitrum } from "viem/chains";
 import { DateTime } from "luxon";
 import { extractTimeRange } from "./utils";
 import { TimeRangeError } from "./errors";
 import logger from "./logger";
+import { ChainId } from "./types";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 5000; // 5 seconds
@@ -56,6 +56,8 @@ const executeOpWithRetry = async (op, chainId) => {
 
 let isJobRunning = false;
 
+const chains = [ChainId.Mainnet, ChainId.Arbitrum, ChainId.Base];
+
 const runWorker = () => {
   const job = cron.schedule("* * * * *", async () => {
     if (isJobRunning) {
@@ -65,19 +67,23 @@ const runWorker = () => {
 
     isJobRunning = true;
     try {
-      const savedOps = await fetchSavedOpsFromDb(arbitrum.id, [
-        DateTime.now(),
-        DateTime.now().plus({ minutes: 30 }),
-      ]);
-      logger.info(`Found ${savedOps.length} operations to process`);
+      for (const chainId of chains) {
+        const savedOps = await fetchSavedOpsFromDb(chainId, [
+          DateTime.now(),
+          DateTime.now().plus({ minutes: 30 }),
+        ]);
+        logger.info(
+          `Found ${savedOps.length} operations to process for chain ${chainId}`,
+        );
 
-      const results = await Promise.all(
-        savedOps.map((op) => executeOpWithRetry(op, arbitrum.id)),
-      );
-      const successCount = results.filter(Boolean).length;
-      logger.info(
-        `Successfully executed ${successCount} out of ${savedOps.length} operations`,
-      );
+        const results = await Promise.all(
+          savedOps.map((op) => executeOpWithRetry(op, chainId)),
+        );
+        const successCount = results.filter(Boolean).length;
+        logger.info(
+          `Successfully executed ${successCount} out of ${savedOps.length} operations on chain ${chainId}`,
+        );
+      }
     } catch (error) {
       console.error("Error in worker:", error);
     } finally {

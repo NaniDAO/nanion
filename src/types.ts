@@ -5,6 +5,8 @@ import logger from "./logger";
 
 export enum ChainId {
   Arbitrum = 42161,
+  Base = 8453,
+  Mainnet = 1,
 }
 
 export const EntryPoint = {
